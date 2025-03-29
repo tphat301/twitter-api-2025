@@ -14,6 +14,7 @@ import { ObjectId } from 'mongodb'
 import { TokenPayLoad } from '~/models/requests/User.requests'
 import { UserVerifyStatus } from '~/constants/enums'
 import { REGEX_USERNAME } from '~/constants/regex'
+import { verifyAccessToken } from '~/utils/common'
 
 /* Schema Rule */
 const emailSchema: ParamSchema = {
@@ -244,29 +245,8 @@ export const accessTokenValidator = validate(
         trim: true,
         custom: {
           options: async (value: string, { req }) => {
-            try {
-              const access_token = (value || '').split(' ')[1]
-              if (!access_token) {
-                throw new ErrorsWithStatus({
-                  message: USER_MESSAGE.ACCESS_TOKEN_IS_REQUIRED,
-                  status: HTTP_STATUS_CODE.UNAUTHORIZED
-                })
-              }
-              const decode_authorization = await verifyToken({
-                token: access_token,
-                secretOrPublicKey: process.env.ACCESS_TOKEN_SECRET as string
-              })
-              ;(req as Request).decode_authorization = decode_authorization
-            } catch (error) {
-              if (error instanceof JsonWebTokenError) {
-                throw new ErrorsWithStatus({
-                  message: capitalize(error.message),
-                  status: HTTP_STATUS_CODE.UNAUTHORIZED
-                })
-              }
-              throw error
-            }
-            return true
+            const access_token = (value || '').split(' ')[1]
+            return await verifyAccessToken(access_token, req as Request)
           }
         }
       }
@@ -534,6 +514,15 @@ export const unfollowValidator = validate(
   checkSchema(
     {
       user_id: userIdSchema
+    },
+    ['params']
+  )
+)
+
+export const getConversationValidator = validate(
+  checkSchema(
+    {
+      receiver_id: userIdSchema
     },
     ['params']
   )

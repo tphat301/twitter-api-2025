@@ -41,5 +41,7 @@ export const PATH = {
   UNLIKE: 'tweets/:tweet_id',
   TWEET_DETAIL: '/:tweet_id',
   TWEET_CHILDREN: '/:tweet_id/children',
-  SEARCH: '/search'
+  SEARCH: '/search',
+  CONVERSATIONS: '/conversations',
+  CONVERSATIONS_RECEIVER: '/receiver/:receiver_id'
 } as const

@@ -16,6 +16,13 @@ import { createServer } from 'http'
 import { Server } from 'socket.io'
 import { Conversation } from './models/schemas/Conversation.schemas'
 import { ObjectId } from 'mongodb'
+import conversationsRouter from './routes/conversations.routes'
+import { verifyAccessToken } from './utils/common'
+import { TokenPayLoad } from './models/requests/User.requests'
+import { UserVerifyStatus } from './constants/enums'
+import { ErrorsWithStatus } from './models/Errors'
+import { USER_MESSAGE } from './constants/messages'
+import HTTP_STATUS_CODE from './constants/httpStatusCode'
 // import './utils/fake'
 
 databaseService.connect().then(() => {
@@ -28,6 +35,7 @@ databaseService.connect().then(() => {
   databaseService.indexLikes()
   databaseService.indexTweet()
 })
+
 initFolder()
 const app = express()
 const httpServer = createServer(app)
@@ -39,6 +47,7 @@ app.use(PATH.TWEETS, tweetsRouter)
 app.use(PATH.BOOKMARKS, bookmarksRouter)
 app.use(PATH.LIKES, likesRouter)
 app.use(PATH.SEARCH, searchRouter)
+app.use(PATH.CONVERSATIONS, conversationsRouter)
 app.use(PATH.STATIC, staticRouter)
 app.use(defaultErrorHandle)
 
@@ -50,31 +59,72 @@ const io = new Server(httpServer, {
 
 const users: { [key: string]: { socket_id: string } } = {}
 
+// Middleware the server instance
+io.use(async (socket, next) => {
+  const { Authorization } = socket.handshake.auth
+  const access_token = (Authorization || '').split(' ')[1]
+  try {
+    const decode_authorization = await verifyAccessToken(access_token)
+    const { verify } = decode_authorization as TokenPayLoad
+    if (verify !== UserVerifyStatus.Verified) {
+      throw new ErrorsWithStatus({
+        message: USER_MESSAGE.VERIFY_USER_INVALID,
+        status: HTTP_STATUS_CODE.FORBIDDEN
+      })
+    }
+    socket.handshake.auth.decode_authorization = decode_authorization
+    socket.handshake.auth.access_token = access_token
+    next()
+  } catch (error) {
+    next({
+      message: 'Unauthorized',
+      name: 'Unauthorized Error',
+      data: error
+    })
+  }
+})
+
 io.on('connection', (socket) => {
   console.log(`User ${socket.id} is connected`)
-  const user_id = socket.handshake.auth._id
+  const { user_id } = socket.handshake.auth.decode_authorization as TokenPayLoad
   if (user_id) {
     users[user_id] = {
       socket_id: socket.id
     }
   }
 
-  console.log('users', users)
+  // Middleware the socket instance
+  socket.use(async (packet, next) => {
+    const { access_token } = socket.handshake.auth
+    try {
+      await verifyAccessToken(access_token)
+      next()
+    } catch (error) {
+      next(new Error('Unauthorized'))
+    }
+  })
 
-  socket.on('chat', async (data) => {
-    const receiverSocketId = users[data.to]?.socket_id
-    if (!receiverSocketId) return
-    await databaseService.conversations.insertOne(
-      new Conversation({
-        sender_id: new ObjectId(data.from),
-        receiver_id: new ObjectId(data.to),
-        content: data.content
-      })
-    )
-    socket.to(receiverSocketId).emit('chat receiver', {
-      content: data.content,
-      from: user_id
+  socket.on('error', (error) => {
+    if (error.message === 'Unauthorized') {
+      socket.disconnect()
+    }
+  })
+
+  socket.on('sender_message', async (data) => {
+    const { receiver_id, sender_id, content } = data.payload
+    const receiverSocketId = users[receiver_id]?.socket_id
+    const conversation = new Conversation({
+      sender_id: new ObjectId(sender_id),
+      receiver_id: new ObjectId(receiver_id),
+      content: content
     })
+    const resultConsersation = await databaseService.conversations.insertOne(conversation)
+    conversation._id = resultConsersation.insertedId
+    if (receiverSocketId) {
+      socket.to(receiverSocketId).emit('receiver_message', {
+        payload: conversation
+      })
+    }
   })
   socket.on('disconnect', () => {
     delete users[user_id]
