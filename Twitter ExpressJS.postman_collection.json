@@ -328,19 +328,16 @@
 				{
 					"name": "Get Profile",
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/users/username67d242d545dc4894584aae4e",
+							"raw": "{{host}}/users/user67e61f3e69cb7eb1c30b70fc",
 							"host": [
 								"{{host}}"
 							],
 							"path": [
 								"users",
-								"username67d242d545dc4894584aae4e"
+								"user67e61f3e69cb7eb1c30b70fc"
 							]
 						}
 					},
@@ -831,6 +828,40 @@
 								"likes",
 								"tweets",
 								"67dff2c28bcfcd866ee8f440"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Coversation",
+			"item": [
+				{
+					"name": "New Request",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/conversations/receiver/67e61f3e69cb7eb1c30b7100?limit=10&page=1",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"conversations",
+								"receiver",
+								"67e61f3e69cb7eb1c30b7100"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								}
 							]
 						}
 					},

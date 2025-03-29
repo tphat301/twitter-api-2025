@@ -43,5 +43,6 @@ export const PATH = {
   TWEET_CHILDREN: '/:tweet_id/children',
   SEARCH: '/search',
   CONVERSATIONS: '/conversations',
-  CONVERSATIONS_RECEIVER: '/receiver/:receiver_id'
+  CONVERSATIONS_RECEIVER: '/receiver/:receiver_id',
+  API_DOCS: '/api-docs'
 } as const

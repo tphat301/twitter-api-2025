@@ -1,0 +1,158 @@
+openapi: 3.0.4
+info:
+  title: Swagger Twitter - OpenAPI 3.0
+  description: |-
+    This is a sample Twitter Server based on the OpenAPI 3.0 specification.  You can find out more about
+    Swagger at [https://swagger.io](https://swagger.io). In the third iteration of the Twitter, we've switched to the design first approach!
+    You can now help us improve the API whether it's by making changes to the definition itself or to the code.
+    That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
+
+  termsOfService: https://swagger.io/terms/
+  contact:
+    email: apiteam@swagger.io
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.12
+externalDocs:
+  description: Find out more about Swagger
+  url: https://swagger.io
+servers:
+  - url: http://localhost:4000/
+tags:
+  - name: users
+    description: Các API liên quan đến users
+    externalDocs:
+      description: Find out more
+      url: https://swagger.io
+
+paths:
+  /users/login:
+    post:
+      tags:
+        - users
+      summary: Đăng nhập.
+      description: Đăng nhập vào hệ thống.
+      operationId: login
+      requestBody:
+        description: Thông tin đăng nhập
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginBody'
+        required: true
+      responses: 
+        '200':
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: 
+                    type: string
+                    example: Login success
+                  data: 
+                    $ref: '#/components/schemas/AuthenticationSuccess'
+        '422':
+          description: 'Email hoặc password chưa chính xác'
+  
+  /users/me:
+    get:
+      tags:
+        - users
+      summary: Lấy thông tin user.
+      description: Lấy thông tin user từ hệ thống.
+      operationId: getMe
+      security:
+        - BearerAuth: []
+      
+      responses: 
+        default:
+          description: Lấy thông tin user thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: 
+                    type: string
+                    example: Get me success
+                  data: 
+                    $ref: '#/components/schemas/User'
+
+components:
+  schemas:
+    LoginBody:
+      type: object
+      properties:
+        email: 
+          type: string
+          example: Jed64@hotmail.com
+        password: 
+          type: string
+          example: Phat123!
+    AuthenticationSuccess:
+      type: object
+      properties:
+        access_token: 
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjdlNjFmM2U2OWNiN2ViMWMzMGI3MGZjIiwidG9rZW5fdHlwZSI6MCwidmVyaWZ5IjoxLCJpYXQiOjE3NDMyNTQyNzgsImV4cCI6MTc1MTg5NDI3OH0.nrUcPBFCfSYYfwb7yCjq_PT4u5N_xLYKYO7hDCNQUFQ
+        refresh_token:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjdlNjFmM2U2OWNiN2ViMWMzMGI3MGZjIiwidG9rZW5fdHlwZSI6MSwidmVyaWZ5IjoxLCJpYXQiOjE3NDMyNTQyNzgsImV4cCI6MTc1MTg5NDI3OH0.mW-T-VCwP-4uaELdobej3wQeGRlUIzLpspmh-iC5DYE
+
+    User:
+      type: object
+      properties:
+        id: 
+          type: string
+          format: MongoId
+          example: 67e61f3e69cb7eb1c30b70fc
+        email: 
+          type: string
+          example: john@gmail.com
+        name: 
+          type: string
+          example: John
+        date_of_birth: 
+          type: string
+          format: ISO8601
+          example: 2024-05-04T16:31:25.387Z
+        created_at: 
+          type: string
+          format: ISO8601
+          example: 2025-03-28T04:02:06.576Z
+        updated_at: 
+          type: string
+          format: ISO8601
+          example: 2025-03-28T04:02:06.576Z
+        bio: 
+          type: string
+          example: Welcome to my state
+        location: 
+          type: string
+          example: Viet Nam
+        website: 
+          type: string
+          example: https://google.com
+        username: 
+          type: string
+          example: user67e61f3e69cb7eb1c30b70fc
+        avatar: 
+          type: string
+          example: http/localhost:4000/images/482077984_658517360083420_1707021771831644247_n.jpg
+        cover_photo: 
+          type: string
+          example: http/localhost:4000/images/z6253750240921_bfa2c82370d64b29adc15e843936b767.jpg
+        twitter_circle: 
+          type: array
+          items: 
+            type: string
+            format: MongoId
+            example: ['67e61f3e69cb7eb1c30b70fc']
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
